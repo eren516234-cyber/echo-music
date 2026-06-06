@@ -20,20 +20,30 @@ function Row({ label, sub, right }: { label: string; sub?: string; right?: React
   );
 }
 
-function SectionTitle({ children }: { children: string }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
+function NavRow({ label, sub }: { label: string; sub?: string }) {
+  return (
+    <Pressable style={styles.row} onPress={() => {}}>
+      <View style={styles.rowInfo}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {sub && <Text style={styles.rowSub}>{sub}</Text>}
+      </View>
+      <Feather name="chevron-right" size={16} color="#333" />
+    </Pressable>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return <Text style={styles.sectionLabel}>{children}</Text>;
 }
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { accent, rainbowMode, perScreenColor, setAccent, toggleRainbow, togglePerScreen, resetBW } = useTheme();
+  const { accentColor, rainbowMode, perScreenColor, setAccentColor, toggleRainbowMode, togglePerScreenColor, resetToBlackWhite } = useTheme();
 
-  const [audioQuality, setAudioQuality] = useState("High · 320kbps");
   const [crossfade, setCrossfade] = useState(true);
   const [normalize, setNormalize] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(true);
   const [translation, setTranslation] = useState(false);
-  const [country, setCountry] = useState("India");
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + (Platform.OS === "web" ? 27 : 0) }]}>
@@ -44,21 +54,20 @@ export default function SettingsScreen() {
         <Text style={styles.heading}>Settings</Text>
 
         {/* THEME */}
-        <SectionTitle>THEME</SectionTitle>
+        <SectionLabel>THEME</SectionLabel>
         <View style={styles.card}>
           <Row
             label="🌈 Rainbow Mode"
-            sub="Change the whole app's colour"
+            sub="Change the app colour"
             right={
               <Switch
                 value={rainbowMode}
-                onValueChange={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); toggleRainbow(); }}
+                onValueChange={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); toggleRainbowMode(); }}
                 trackColor={{ false: "#222", true: "#fff" }}
                 thumbColor={rainbowMode ? "#000" : "#555"}
               />
             }
           />
-
           <View style={styles.divider} />
 
           <View style={styles.colorSection}>
@@ -66,14 +75,17 @@ export default function SettingsScreen() {
             <View style={styles.colorRow}>
               {ACCENT_COLORS.map(c => (
                 <Pressable
-                  key={c}
-                  style={[styles.colorDot, { backgroundColor: c }, accent === c && styles.colorDotActive]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setAccent(c); }}
+                  key={c.value}
+                  style={[
+                    styles.colorDot,
+                    { backgroundColor: c.value },
+                    accentColor === c.value && styles.colorDotActive,
+                  ]}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setAccentColor(c.value); }}
                 />
               ))}
             </View>
           </View>
-
           <View style={styles.divider} />
 
           <Row
@@ -82,166 +94,103 @@ export default function SettingsScreen() {
             right={
               <Switch
                 value={perScreenColor}
-                onValueChange={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); togglePerScreen(); }}
+                onValueChange={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); togglePerScreenColor(); }}
                 trackColor={{ false: "#222", true: "#fff" }}
                 thumbColor={perScreenColor ? "#000" : "#555"}
               />
             }
           />
-
           <View style={styles.divider} />
 
           <Pressable
             style={styles.resetBtn}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); resetBW(); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); resetToBlackWhite(); }}
           >
             <Text style={styles.resetText}>Reset to Black & White</Text>
           </Pressable>
         </View>
 
         {/* PLAYBACK */}
-        <SectionTitle>PLAYBACK</SectionTitle>
+        <SectionLabel>PLAYBACK</SectionLabel>
         <View style={styles.card}>
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Audio Quality</Text>
-              <Text style={styles.rowSub}>{audioQuality}</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
-
+          <NavRow label="Audio Quality"   sub="High · 320kbps" />
           <View style={styles.divider} />
-
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Equalizer</Text>
-              <Text style={styles.rowSub}>Custom bands</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
-
+          <NavRow label="Equalizer"       sub="Custom bands" />
           <View style={styles.divider} />
-
           <Row
             label="Crossfade"
             sub="3 seconds"
             right={
-              <Switch
-                value={crossfade}
-                onValueChange={v => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCrossfade(v); }}
+              <Switch value={crossfade} onValueChange={setCrossfade}
                 trackColor={{ false: "#222", true: "#fff" }}
-                thumbColor={crossfade ? "#000" : "#555"}
-              />
+                thumbColor={crossfade ? "#000" : "#555"} />
             }
           />
-
           <View style={styles.divider} />
-
           <Row
             label="Normalize Volume"
             right={
-              <Switch
-                value={normalize}
-                onValueChange={v => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNormalize(v); }}
+              <Switch value={normalize} onValueChange={setNormalize}
                 trackColor={{ false: "#222", true: "#fff" }}
-                thumbColor={normalize ? "#000" : "#555"}
-              />
+                thumbColor={normalize ? "#000" : "#555"} />
             }
           />
         </View>
 
         {/* CONTENT */}
-        <SectionTitle>CONTENT</SectionTitle>
+        <SectionLabel>CONTENT</SectionLabel>
         <View style={styles.card}>
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Spotify Import</Text>
-              <Text style={styles.rowSub}>Transfer playlists</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
-
+          <NavRow label="Spotify Import"  sub="Transfer playlists" />
           <View style={styles.divider} />
-
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Import / Export</Text>
-              <Text style={styles.rowSub}>Backups</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
-
+          <NavRow label="Import / Export" sub="Backups" />
           <View style={styles.divider} />
-
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Country</Text>
-              <Text style={styles.rowSub}>{country}</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
+          <NavRow label="Country"         sub="India" />
+          <View style={styles.divider} />
+          <NavRow label="Listen Together" sub="Sync playback with friends" />
         </View>
 
         {/* AI */}
-        <SectionTitle>AI</SectionTitle>
+        <SectionLabel>AI</SectionLabel>
         <View style={styles.card}>
           <Row
             label="AI Suggestions"
-            sub="Mistral / OpenRouter"
+            sub="Personalised recommendations"
             right={
-              <Switch
-                value={aiSuggestions}
-                onValueChange={v => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAiSuggestions(v); }}
+              <Switch value={aiSuggestions} onValueChange={setAiSuggestions}
                 trackColor={{ false: "#222", true: "#fff" }}
-                thumbColor={aiSuggestions ? "#000" : "#555"}
-              />
+                thumbColor={aiSuggestions ? "#000" : "#555"} />
             }
           />
-
           <View style={styles.divider} />
-
           <Row
             label="Translation"
-            sub="DeepL"
+            sub="Lyrics & UI"
             right={
-              <Switch
-                value={translation}
-                onValueChange={v => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setTranslation(v); }}
+              <Switch value={translation} onValueChange={setTranslation}
                 trackColor={{ false: "#222", true: "#fff" }}
-                thumbColor={translation ? "#000" : "#555"}
-              />
+                thumbColor={translation ? "#000" : "#555"} />
             }
           />
         </View>
 
-        {/* ABOUT */}
-        <SectionTitle>ABOUT</SectionTitle>
+        {/* STORAGE */}
+        <SectionLabel>STORAGE</SectionLabel>
         <View style={styles.card}>
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Version</Text>
-              <Text style={styles.rowSub}>YVL Music 1.0.0</Text>
-            </View>
-          </Pressable>
-
+          <NavRow label="Downloaded Songs" sub="2 songs · 14 MB" />
           <View style={styles.divider} />
+          <NavRow label="Clear Cache"      sub="38 MB" />
+        </View>
 
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>GitHub</Text>
-              <Text style={styles.rowSub}>eren516234-cyber/echo-music</Text>
-            </View>
-            <Feather name="external-link" size={15} color="#444" />
-          </Pressable>
-
+        {/* ABOUT */}
+        <SectionLabel>ABOUT</SectionLabel>
+        <View style={styles.card}>
+          <Row label="Version" sub="YVL Music 1.0.0" />
           <View style={styles.divider} />
-
-          <Pressable style={styles.rowPressable} onPress={() => {}}>
-            <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Check for Updates</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#444" />
-          </Pressable>
+          <NavRow label="GitHub"           sub="eren516234-cyber/echo-music" />
+          <View style={styles.divider} />
+          <NavRow label="Check for Updates" />
+          <View style={styles.divider} />
+          <NavRow label="Privacy Policy" />
         </View>
       </ScrollView>
     </View>
@@ -251,18 +200,17 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   heading: { fontSize: 28, fontWeight: "800", color: "#fff", fontFamily: "Inter_700Bold", marginTop: 8, marginBottom: 20 },
-  sectionTitle: { fontSize: 11, fontWeight: "600", color: "#555", fontFamily: "Inter_600SemiBold", letterSpacing: 1.2, marginBottom: 10, marginTop: 20 },
+  sectionLabel: { fontSize: 11, fontWeight: "600", color: "#555", fontFamily: "Inter_600SemiBold", letterSpacing: 1.2, marginBottom: 10, marginTop: 20 },
   card: { backgroundColor: "#111", borderRadius: 14, overflow: "hidden", borderWidth: 1, borderColor: "#1e1e1e" },
   divider: { height: 1, backgroundColor: "#1a1a1a" },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 },
-  rowPressable: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 },
   rowInfo: { flex: 1 },
   rowLabel: { fontSize: 15, color: "#fff", fontFamily: "Inter_500Medium" },
-  rowSub: { fontSize: 12, color: "#666", fontFamily: "Inter_400Regular", marginTop: 2 },
+  rowSub: { fontSize: 12, color: "#555", fontFamily: "Inter_400Regular", marginTop: 2 },
   colorSection: { paddingHorizontal: 16, paddingVertical: 14 },
   colorRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
   colorDot: { width: 34, height: 34, borderRadius: 17 },
   colorDotActive: { borderWidth: 3, borderColor: "#fff", transform: [{ scale: 1.15 }] },
   resetBtn: { paddingHorizontal: 16, paddingVertical: 14, alignItems: "center" },
-  resetText: { fontSize: 14, color: "#666", fontFamily: "Inter_500Medium" },
+  resetText: { fontSize: 14, color: "#555", fontFamily: "Inter_500Medium" },
 });
