@@ -19,7 +19,34 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install mobile dependencies (npm, no workspace)
+      - name: Patch package.json (resolve catalog & workspace refs)
+        working-directory: artifacts/mobile
+        run: |
+          node - << 'JS'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          // catalog pinned versions
+          const catalog = {
+            "@tanstack/react-query": "^5.90.21",
+            "react": "19.1.0",
+            "react-dom": "19.1.0",
+            "zod": "^3.25.76"
+          };
+          // workspace packages to remove (not needed for APK)
+          const removeWs = ["@workspace/api-client-react"];
+          for (const section of ["dependencies", "devDependencies"]) {
+            if (!pkg[section]) continue;
+            for (const [k, v] of Object.entries(pkg[section])) {
+              if (v === "catalog:") pkg[section][k] = catalog[k] || "latest";
+              if (v.startsWith("workspace:")) delete pkg[section][k];
+            }
+            for (const rm of removeWs) delete pkg[section][rm];
+          }
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          console.log("Patched package.json");
+          JS
+
+      - name: Install mobile dependencies
         working-directory: artifacts/mobile
         run: npm install --legacy-peer-deps
 
@@ -57,9 +84,8 @@ jobs:
           path: artifacts/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Done
+      - name: Summary
         run: |
-          echo "## ✅ YVL Music APK Built!" >> $GITHUB_STEP_SUMMARY
-          echo "Download from **Artifacts** above." >> $GITHUB_STEP_SUMMARY
-          size=$(du -sh artifacts/mobile/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)
-          echo "Size: $size" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ YVL Music APK Ready!" >> $GITHUB_STEP_SUMMARY
+          echo "Download from **Artifacts** tab above." >> $GITHUB_STEP_SUMMARY
+          echo "Package: com.yvl.music" >> $GITHUB_STEP_SUMMARY
